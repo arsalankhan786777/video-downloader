@@ -1,0 +1,52 @@
+name: Video Downloader
+on:
+  repository_dispatch:
+    types: [download_video]
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: 'Video ID to download'
+        required: true
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Download Video
+      run: |
+        # Install yt-dlp
+        pip install yt-dlp
+        
+        # Get video ID from trigger
+        if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+          VIDEO_ID="${{ github.event.client_payload.video_id }}"
+          CALLBACK_URL="${{ github.event.client_payload.callback_url }}"
+        else
+          VIDEO_ID="${{ github.event.inputs.video_id }}"
+          CALLBACK_URL="https://your-domain.com/receive_video.php"
+        fi
+        
+        echo "📥 Downloading video: $VIDEO_ID"
+        
+        # Download video (GitHub has clean IPs - no bot detection!)
+        yt-dlp -f "best[height<=720]/best" -o "${VIDEO_ID}.%(ext)s" "https://www.youtube.com/watch?v=${VIDEO_ID}"
+        
+        # Find the downloaded file
+        FILE=$(ls ${VIDEO_ID}.* | head -1)
+        
+        if [ -f "$FILE" ]; then
+          echo "✅ Downloaded: $FILE"
+          
+          # Upload to your Hostinger server
+          curl -X POST \
+            -F "video=@${FILE}" \
+            -F "video_id=${VIDEO_ID}" \
+            -F "source=github_actions" \
+            "${CALLBACK_URL}"
+          
+          echo "📤 Sent to Hostinger: $FILE"
+        else
+          echo "❌ Download failed for: $VIDEO_ID"
+        fi
