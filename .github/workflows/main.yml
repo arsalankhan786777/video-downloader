@@ -14,12 +14,12 @@ jobs:
     timeout-minutes: 30
     
     steps:
-    - name: Download Video
+    - name: Download Video (Enhanced Anti-Bot)
       run: |
         # Install yt-dlp
         pip install yt-dlp
         
-        # Get video ID from trigger
+        # Get video ID
         if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
           VIDEO_ID="${{ github.event.client_payload.video_id }}"
           CALLBACK_URL="${{ github.event.client_payload.callback_url }}"
@@ -28,25 +28,41 @@ jobs:
           CALLBACK_URL="https://carfex.net/python_all/arsalanjazib5@gmail.com/receive_video.php"
         fi
         
-        echo "📥 Downloading video: $VIDEO_ID"
+        echo "📥 Downloading video with anti-bot measures: $VIDEO_ID"
         
-        # Download video (GitHub has clean IPs - no bot detection!)
-        yt-dlp -f "best[height<=720]/best" -o "${VIDEO_ID}.%(ext)s" "https://www.youtube.com/watch?v=${VIDEO_ID}"
+        # ENHANCED ANTI-BOT DOWNLOAD
+        yt-dlp \
+          --format "worst[height<=480]/worst" \
+          --user-agent "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15" \
+          --extractor-args "youtube:player_client=android_music,android;player_skip=webpage,js" \
+          --sleep-interval 5 \
+          --max-sleep-interval 10 \
+          --output "${VIDEO_ID}.%(ext)s" \
+          "https://m.youtube.com/watch?v=${VIDEO_ID}"
         
-        # Find the downloaded file
-        FILE=$(ls ${VIDEO_ID}.* | head -1)
+        # Find and upload file
+        FILE=$(ls ${VIDEO_ID}.* 2>/dev/null | head -1)
         
         if [ -f "$FILE" ]; then
           echo "✅ Downloaded: $FILE"
-          
-          # Upload to your Hostinger server
-          curl -X POST \
-            -F "video=@${FILE}" \
-            -F "video_id=${VIDEO_ID}" \
-            -F "source=github_actions" \
-            "${CALLBACK_URL}"
-          
-          echo "📤 Sent to Hostinger: $FILE"
+          curl -X POST -F "video=@${FILE}" -F "video_id=${VIDEO_ID}" -F "source=github_actions" "${CALLBACK_URL}"
+          echo "📤 Sent to Hostinger"
         else
-          echo "❌ Download failed for: $VIDEO_ID"
+          echo "❌ Download failed, trying alternative method..."
+          
+          # FALLBACK: Try embed URL
+          yt-dlp \
+            --format "worst/best" \
+            --user-agent "com.google.android.youtube/17.49.37" \
+            --extractor-args "youtube:player_client=android" \
+            --output "${VIDEO_ID}_fallback.%(ext)s" \
+            "https://www.youtube.com/embed/${VIDEO_ID}"
+          
+          FALLBACK_FILE=$(ls ${VIDEO_ID}_fallback.* 2>/dev/null | head -1)
+          if [ -f "$FALLBACK_FILE" ]; then
+            echo "✅ Fallback download successful: $FALLBACK_FILE"
+            curl -X POST -F "video=@${FALLBACK_FILE}" -F "video_id=${VIDEO_ID}" -F "source=github_fallback" "${CALLBACK_URL}"
+          else
+            echo "❌ All methods failed for: $VIDEO_ID"
+          fi
         fi
