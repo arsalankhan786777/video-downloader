@@ -25,7 +25,7 @@ jobs:
           CALLBACK_URL="${{ github.event.client_payload.callback_url }}"
         else
           VIDEO_ID="${{ github.event.inputs.video_id }}"
-          CALLBACK_URL="https://your-domain.com/receive_video.php"
+          CALLBACK_URL="https://carfex.net/python_all/arsalanjazib5@gmail.com/receive_video.php"
         fi
         
         echo "📥 Downloading video: $VIDEO_ID"
