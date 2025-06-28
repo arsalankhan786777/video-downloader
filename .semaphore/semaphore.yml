@@ -10,4 +10,9 @@ blocks:
       jobs:
         - name: 'Job #1'
           commands:
-            - checkout
+            - apt-get update && apt-get install -y ffmpeg curl
+            - pip install yt-dlp requests
+            - mkdir -p downloads
+            - cd downloads
+            - 'yt-dlp --format "best[height<=720]/best" --output "%(id)s.%(ext)s" --no-warnings --retries 3 --fragment-retries 3 "https://www.youtube.com/watch?v=dQw4w9WgXcQ"'
+            - ls -la
