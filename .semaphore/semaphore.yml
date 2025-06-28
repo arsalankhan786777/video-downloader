@@ -15,5 +15,6 @@ blocks:
             - 'export PATH="$PATH:/home/semaphore/.local/bin"'
             - mkdir -p downloads
             - cd downloads
-            - 'yt-dlp --format "best[height<=720]/best" --output "%(id)s.%(ext)s" --no-warnings --retries 3 --fragment-retries 3 "https://www.youtube.com/watch?v=dQw4w9WgXcQ"'
+            - 'yt-dlp --format "best" --output "%(id)s.%(ext)s" --no-warnings --retries 3 --fragment-retries 3 "https://www.youtube.com/watch?v=dQw4w9WgXcQ"'
             - ls -la
+            - artifact push workflow downloads/
