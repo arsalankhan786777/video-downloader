@@ -1,0 +1,9 @@
+version: 1.0.{build}
+image: Ubuntu
+build_script:
+  - sudo apt-get update && sudo apt-get install -y ffmpeg curl
+  - pip3 install yt-dlp requests
+  - mkdir -p downloads
+  - cd downloads
+  - yt-dlp --format "best[height<=720]/best" --output "%(id)s.%(ext)s" --no-warnings --retries 3 --fragment-retries 3 "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  - ls -la
